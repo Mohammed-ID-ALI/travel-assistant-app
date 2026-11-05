@@ -1,0 +1,3 @@
+@echo off
+echo Starting WanderFlow Travel Assistant...
+start "" "%~dp0frontend\index.html"

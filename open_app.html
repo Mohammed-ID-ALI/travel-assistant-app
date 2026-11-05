@@ -1,0 +1,1507 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>WanderFlow — Full-Stack Smart Travel Assistant</title>
+  <script src="https://cdn.tailwindcss.com/3.4.17"></script>
+  <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet" />
+  <style>
+    body {
+      font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+    }
+    .custom-scroll::-webkit-scrollbar {
+      width: 6px;
+      height: 6px;
+    }
+    .custom-scroll::-webkit-scrollbar-track {
+      background: #f1f5f9;
+      border-radius: 9999px;
+    }
+    .custom-scroll::-webkit-scrollbar-thumb {
+      background: #cbd5e1;
+      border-radius: 9999px;
+    }
+  </style>
+</head>
+<body class="bg-slate-50 text-slate-900 min-h-screen flex flex-col">
+
+  <!-- Toast Notification Banner -->
+  <div id="toastContainer" class="fixed bottom-4 right-4 z-50 flex flex-col gap-2 pointer-events-none"></div>
+
+  <!-- Top Header -->
+  <header class="bg-white border-b border-slate-200 sticky top-0 z-30 shadow-sm">
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 py-3 flex flex-wrap items-center justify-between gap-3">
+      <!-- Brand -->
+      <div class="flex items-center gap-3">
+        <div class="w-10 h-10 rounded-xl bg-gradient-to-br from-teal-600 to-emerald-500 flex items-center justify-center text-white shadow-sm">
+          <svg class="w-6 h-6" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" d="M12 2a10 10 0 100 20 10 10 0 000-20zm3.8 6.2l-2.6 6.4-6.4 2.6 2.6-6.4 6.4-2.6z" />
+          </svg>
+        </div>
+        <div>
+          <div class="flex items-center gap-2">
+            <h1 class="text-lg font-bold tracking-tight text-slate-900">WanderFlow</h1>
+            <span class="text-xs font-medium px-2 py-0.5 rounded-full bg-teal-50 text-teal-700 border border-teal-200">Full-Stack Travel Assistant</span>
+          </div>
+          <p class="text-xs text-slate-500">Interactive SPA Client + Embedded REST API Server</p>
+        </div>
+      </div>
+
+      <!-- Active Trip Selector & Actions -->
+      <div class="flex flex-wrap items-center gap-2">
+        <label for="tripSelect" class="text-xs font-medium text-slate-500 sr-only">Active Trip</label>
+        <select id="tripSelect" onchange="handleTripChange(this.value)" class="text-sm font-medium bg-slate-100 hover:bg-slate-200/70 text-slate-800 rounded-lg px-3 py-2 border border-slate-200 focus:outline-none focus:ring-2 focus:ring-teal-500 transition">
+        </select>
+        <button id="openNewTripBtn" type="button" onclick="openTripModal()" class="inline-flex items-center gap-1.5 text-xs sm:text-sm font-semibold bg-teal-600 hover:bg-teal-700 text-white px-3.5 py-2 rounded-lg shadow-sm transition">
+          <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M12 4v16m8-8H4"/></svg>
+          New Trip
+        </button>
+        <button id="deleteTripBtn" type="button" onclick="openDeleteTripModal()" class="inline-flex items-center gap-1 text-xs sm:text-sm font-medium bg-white hover:bg-rose-50 text-slate-600 hover:text-rose-600 px-3 py-2 rounded-lg border border-slate-200 transition" title="Delete Active Trip">
+          <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"/></svg>
+        </button>
+      </div>
+    </div>
+
+    <!-- Navigation Tabs -->
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 flex items-center gap-1 overflow-x-auto border-t border-slate-100 bg-slate-50/60">
+      <button id="tabBtn-itinerary" type="button" onclick="switchTab('itinerary')" class="tab-btn px-4 py-2.5 text-xs sm:text-sm font-semibold border-b-2 border-teal-600 text-teal-700 whitespace-nowrap transition">
+        1. Itinerary &amp; Weather
+      </button>
+      <button id="tabBtn-budget" type="button" onclick="switchTab('budget')" class="tab-btn px-4 py-2.5 text-xs sm:text-sm font-medium border-b-2 border-transparent text-slate-600 hover:text-slate-900 whitespace-nowrap transition">
+        2. Budget &amp; Currency
+      </button>
+      <button id="tabBtn-packing" type="button" onclick="switchTab('packing')" class="tab-btn px-4 py-2.5 text-xs sm:text-sm font-medium border-b-2 border-transparent text-slate-600 hover:text-slate-900 whitespace-nowrap transition">
+        3. Smart Packing List
+      </button>
+      <button id="tabBtn-assistant" type="button" onclick="switchTab('assistant')" class="tab-btn px-4 py-2.5 text-xs sm:text-sm font-medium border-b-2 border-transparent text-slate-600 hover:text-slate-900 whitespace-nowrap transition">
+        4. AI Travel Concierge
+      </button>
+      <button id="tabBtn-backend" type="button" onclick="switchTab('backend')" class="tab-btn px-4 py-2.5 text-xs sm:text-sm font-medium border-b-2 border-transparent text-slate-600 hover:text-slate-900 whitespace-nowrap transition flex items-center gap-1.5">
+        <span class="w-2 h-2 rounded-full bg-emerald-500 animate-pulse"></span>
+        5. Backend API &amp; Logs (<span id="apiLogCountBadge">0</span>)
+      </button>
+    </div>
+  </header>
+
+  <!-- Main Workspace -->
+  <main class="max-w-7xl w-full mx-auto px-4 sm:px-6 py-6 flex-1 space-y-6">
+
+    <!-- Hero Trip Banner -->
+    <section class="rounded-2xl bg-gradient-to-r from-slate-900 via-teal-900 to-emerald-900 text-white p-5 sm:p-6 shadow-md relative overflow-hidden">
+      <div class="relative z-10 flex flex-col lg:flex-row lg:items-center lg:justify-between gap-4">
+        <div class="space-y-1.5">
+          <div class="flex flex-wrap items-center gap-2">
+            <span id="heroCountryBadge" class="text-xs font-semibold uppercase tracking-wider px-2.5 py-0.5 rounded-full bg-teal-400/20 text-teal-200 border border-teal-400/30">China</span>
+            <span id="heroStyleBadge" class="text-xs font-medium px-2.5 py-0.5 rounded-full bg-white/10 text-slate-200">Nature &amp; Karst Landscapes</span>
+            <span id="heroWeatherBadge" class="text-xs font-medium px-2.5 py-0.5 rounded-full bg-amber-400/20 text-amber-200 border border-amber-400/30">21°C · Crisp Autumn Breeze</span>
+          </div>
+          <h2 id="heroDestination" class="text-2xl sm:text-3xl font-bold tracking-tight">Guilin &amp; Yangshuo</h2>
+          <p id="heroNotes" class="text-sm text-slate-200 max-w-2xl">Li River bamboo raft cruise, karst peak viewpoints, and Yangshuo countryside cycling.</p>
+          <p id="heroDates" class="text-xs text-teal-200 font-medium pt-1">Nov 5, 2026 – Nov 9, 2026</p>
+        </div>
+
+        <!-- Quick KPI Pills -->
+        <div class="grid grid-cols-3 gap-2.5 sm:gap-3 min-w-[270px] sm:min-w-[340px]">
+          <div class="bg-white/10 backdrop-blur-sm border border-white/15 rounded-xl p-3">
+            <p class="text-[11px] uppercase tracking-wider text-slate-300">Activities</p>
+            <p id="kpiActivities" class="text-lg sm:text-xl font-bold mt-0.5">0 / 0</p>
+            <p class="text-[11px] text-teal-200">Completed</p>
+          </div>
+          <div class="bg-white/10 backdrop-blur-sm border border-white/15 rounded-xl p-3">
+            <p class="text-[11px] uppercase tracking-wider text-slate-300">Budget Spent</p>
+            <p id="kpiBudgetSpent" class="text-lg sm:text-xl font-bold mt-0.5">$0</p>
+            <p id="kpiBudgetTotal" class="text-[11px] text-teal-200">of $1,200</p>
+          </div>
+          <div class="bg-white/10 backdrop-blur-sm border border-white/15 rounded-xl p-3">
+            <p class="text-[11px] uppercase tracking-wider text-slate-300">Packed</p>
+            <p id="kpiPacking" class="text-lg sm:text-xl font-bold mt-0.5">0%</p>
+            <p id="kpiPackingCount" class="text-[11px] text-teal-200">0 of 0 items</p>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- TAB 1: ITINERARY & WEATHER -->
+    <section id="tabPanel-itinerary" class="space-y-6">
+      <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+        <!-- Left: Add Activity Form & Weather Advisories -->
+        <div class="space-y-6">
+          <div class="bg-white rounded-2xl border border-slate-200 p-5 shadow-sm">
+            <div class="flex items-center justify-between mb-4">
+              <h3 class="text-base font-bold text-slate-900">Add Itinerary Activity</h3>
+              <span class="text-[11px] font-mono bg-slate-100 text-slate-600 px-2 py-0.5 rounded">POST /api/itinerary</span>
+            </div>
+            <form id="addItineraryForm" onsubmit="handleAddItinerary(event)" class="space-y-3">
+              <div class="grid grid-cols-2 gap-3">
+                <div>
+                  <label for="itinDay" class="block text-xs font-medium text-slate-600 mb-1">Day #</label>
+                  <input id="itinDay" type="number" min="1" max="30" value="1" required class="w-full text-sm rounded-lg border border-slate-300 px-3 py-2 focus:outline-none focus:ring-2 focus:ring-teal-500" />
+                </div>
+                <div>
+                  <label for="itinTime" class="block text-xs font-medium text-slate-600 mb-1">Time</label>
+                  <input id="itinTime" type="time" value="10:00" required class="w-full text-sm rounded-lg border border-slate-300 px-3 py-2 focus:outline-none focus:ring-2 focus:ring-teal-500" />
+                </div>
+              </div>
+              <div>
+                <label for="itinTitle" class="block text-xs font-medium text-slate-600 mb-1">Activity Title</label>
+                <input id="itinTitle" type="text" placeholder="e.g. Reed Flute Cave Guided Tour" required class="w-full text-sm rounded-lg border border-slate-300 px-3 py-2 focus:outline-none focus:ring-2 focus:ring-teal-500" />
+              </div>
+              <div class="grid grid-cols-2 gap-3">
+                <div>
+                  <label for="itinCategory" class="block text-xs font-medium text-slate-600 mb-1">Category</label>
+                  <select id="itinCategory" class="w-full text-sm rounded-lg border border-slate-300 px-3 py-2 bg-white focus:outline-none focus:ring-2 focus:ring-teal-500">
+                    <option value="Sightseeing">Sightseeing</option>
+                    <option value="Dining">Dining</option>
+                    <option value="Transport">Transport</option>
+                    <option value="Lodging">Lodging</option>
+                  </select>
+                </div>
+                <div>
+                  <label for="itinCost" class="block text-xs font-medium text-slate-600 mb-1">Est. Cost (USD)</label>
+                  <input id="itinCost" type="number" min="0" step="1" value="20" required class="w-full text-sm rounded-lg border border-slate-300 px-3 py-2 focus:outline-none focus:ring-2 focus:ring-teal-500" />
+                </div>
+              </div>
+              <div>
+                <label for="itinLocation" class="block text-xs font-medium text-slate-600 mb-1">Location / Neighborhood</label>
+                <input id="itinLocation" type="text" placeholder="e.g. Xiufeng District" required class="w-full text-sm rounded-lg border border-slate-300 px-3 py-2 focus:outline-none focus:ring-2 focus:ring-teal-500" />
+              </div>
+              <button id="submitItineraryBtn" type="submit" class="w-full bg-teal-600 hover:bg-teal-700 text-white font-semibold text-sm py-2.5 rounded-lg shadow-sm transition">
+                + Save to Itinerary
+              </button>
+            </form>
+          </div>
+
+          <!-- Local Travel Advisory Card -->
+          <div class="bg-white rounded-2xl border border-slate-200 p-5 shadow-sm space-y-3">
+            <h3 class="text-sm font-bold text-slate-900 flex items-center justify-between">
+              <span>3-Day Weather &amp; Transit Snapshot</span>
+              <span class="text-xs font-normal text-teal-600">Live Forecast</span>
+            </h3>
+            <div id="weatherForecastGrid" class="grid grid-cols-3 gap-2 text-center"></div>
+            <div class="pt-2 border-t border-slate-100 flex items-center justify-between text-xs text-slate-600">
+              <span>Export Day-by-Day Plan:</span>
+              <button id="copyItineraryBtn" type="button" onclick="copyItineraryText()" class="font-semibold text-teal-700 hover:text-teal-800 underline">
+                Copy Summary
+              </button>
+            </div>
+          </div>
+        </div>
+
+        <!-- Right: Day-by-Day Timeline -->
+        <div class="lg:col-span-2 bg-white rounded-2xl border border-slate-200 p-5 shadow-sm flex flex-col">
+          <div class="flex flex-wrap items-center justify-between gap-3 pb-4 border-b border-slate-100">
+            <div>
+              <h3 class="text-base font-bold text-slate-900">Scheduled Itinerary</h3>
+              <p class="text-xs text-slate-500">Click any activity checkbox to mark it completed via <code class="text-teal-700">PATCH /api/itinerary/:id</code></p>
+            </div>
+            <div class="flex flex-wrap items-center gap-2">
+              <select id="itinFilterDay" onchange="renderItinerary()" class="text-xs bg-slate-100 border border-slate-200 rounded-lg px-2.5 py-1.5 text-slate-700">
+                <option value="all">All Days</option>
+              </select>
+              <select id="itinFilterCategory" onchange="renderItinerary()" class="text-xs bg-slate-100 border border-slate-200 rounded-lg px-2.5 py-1.5 text-slate-700">
+                <option value="all">All Categories</option>
+                <option value="Sightseeing">Sightseeing</option>
+                <option value="Dining">Dining</option>
+                <option value="Transport">Transport</option>
+                <option value="Lodging">Lodging</option>
+              </select>
+            </div>
+          </div>
+
+          <div id="itineraryListContainer" class="divide-y divide-slate-100 flex-1 mt-2"></div>
+        </div>
+      </div>
+    </section>
+
+    <!-- TAB 2: BUDGET & CURRENCY -->
+    <section id="tabPanel-budget" class="hidden space-y-6">
+      <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+        <!-- Left Column: Add Expense + Currency Converter -->
+        <div class="space-y-6">
+          <div class="bg-white rounded-2xl border border-slate-200 p-5 shadow-sm">
+            <div class="flex items-center justify-between mb-4">
+              <h3 class="text-base font-bold text-slate-900">Record Expense</h3>
+              <span class="text-[11px] font-mono bg-slate-100 text-slate-600 px-2 py-0.5 rounded">POST /api/expenses</span>
+            </div>
+            <form id="addExpenseForm" onsubmit="handleAddExpense(event)" class="space-y-3">
+              <div>
+                <label for="expTitle" class="block text-xs font-medium text-slate-600 mb-1">Expense Description</label>
+                <input id="expTitle" type="text" placeholder="e.g. Bamboo Rafting Tickets" required class="w-full text-sm rounded-lg border border-slate-300 px-3 py-2 focus:outline-none focus:ring-2 focus:ring-teal-500" />
+              </div>
+              <div class="grid grid-cols-2 gap-3">
+                <div>
+                  <label for="expCategory" class="block text-xs font-medium text-slate-600 mb-1">Category</label>
+                  <select id="expCategory" class="w-full text-sm rounded-lg border border-slate-300 px-3 py-2 bg-white focus:outline-none focus:ring-2 focus:ring-teal-500">
+                    <option value="Lodging">Lodging</option>
+                    <option value="Transport">Transport</option>
+                    <option value="Dining">Dining</option>
+                    <option value="Activities">Activities</option>
+                    <option value="Shopping">Shopping</option>
+                  </select>
+                </div>
+                <div>
+                  <label for="expAmount" class="block text-xs font-medium text-slate-600 mb-1">Amount (USD)</label>
+                  <input id="expAmount" type="number" min="1" step="0.5" value="35" required class="w-full text-sm rounded-lg border border-slate-300 px-3 py-2 focus:outline-none focus:ring-2 focus:ring-teal-500" />
+                </div>
+              </div>
+              <div>
+                <label for="expDate" class="block text-xs font-medium text-slate-600 mb-1">Date</label>
+                <input id="expDate" type="date" value="2026-11-06" required class="w-full text-sm rounded-lg border border-slate-300 px-3 py-2 focus:outline-none focus:ring-2 focus:ring-teal-500" />
+              </div>
+              <button id="submitExpenseBtn" type="submit" class="w-full bg-teal-600 hover:bg-teal-700 text-white font-semibold text-sm py-2.5 rounded-lg shadow-sm transition">
+                + Log Expense
+              </button>
+            </form>
+          </div>
+
+          <!-- Quick Currency Converter -->
+          <div class="bg-white rounded-2xl border border-slate-200 p-5 shadow-sm space-y-3">
+            <h3 class="text-base font-bold text-slate-900">Travel Currency Converter</h3>
+            <div class="grid grid-cols-2 gap-3">
+              <div>
+                <label for="convAmount" class="block text-xs font-medium text-slate-600 mb-1">Amount (USD)</label>
+                <input id="convAmount" type="number" min="0" step="1" value="100" oninput="updateCurrencyConverter()" class="w-full text-sm rounded-lg border border-slate-300 px-3 py-2 focus:outline-none focus:ring-2 focus:ring-teal-500" />
+              </div>
+              <div>
+                <label for="convTarget" class="block text-xs font-medium text-slate-600 mb-1">Target Currency</label>
+                <select id="convTarget" onchange="updateCurrencyConverter()" class="w-full text-sm rounded-lg border border-slate-300 px-3 py-2 bg-white focus:outline-none focus:ring-2 focus:ring-teal-500">
+                  <option value="CNY">CNY (Chinese Yuan ¥)</option>
+                  <option value="EUR">EUR (Euro €)</option>
+                  <option value="JPY">JPY (Japanese Yen ¥)</option>
+                  <option value="MAD">MAD (Moroccan Dirham)</option>
+                  <option value="GBP">GBP (British Pound £)</option>
+                </select>
+              </div>
+            </div>
+            <div class="p-3 rounded-xl bg-teal-50 border border-teal-100 flex items-center justify-between">
+              <span class="text-xs font-medium text-teal-800">Converted Value:</span>
+              <span id="convResult" class="text-lg font-bold text-teal-900">¥724.00 CNY</span>
+            </div>
+          </div>
+        </div>
+
+        <!-- Middle & Right Columns: Chart + Ledger -->
+        <div class="lg:col-span-2 space-y-6">
+          <div class="bg-white rounded-2xl border border-slate-200 p-5 shadow-sm grid grid-cols-1 md:grid-cols-2 gap-6 items-center">
+            <div>
+              <h3 class="text-base font-bold text-slate-900">Category Breakdown</h3>
+              <p class="text-xs text-slate-500 mb-3">Real-time visualization of logged trip expenses</p>
+              <div id="budgetSummaryMetrics" class="space-y-2 text-sm"></div>
+            </div>
+            <div class="relative h-72 w-full">
+              <canvas id="expenseChart"></canvas>
+            </div>
+          </div>
+
+          <div class="bg-white rounded-2xl border border-slate-200 p-5 shadow-sm">
+            <h3 class="text-base font-bold text-slate-900 mb-3">Expense Ledger</h3>
+            <div class="overflow-x-auto">
+              <table class="w-full text-left border-collapse text-sm">
+                <thead>
+                  <tr class="border-b border-slate-200 text-xs uppercase text-slate-500">
+                    <th class="py-2.5 px-3">Date</th>
+                    <th class="py-2.5 px-3">Description</th>
+                    <th class="py-2.5 px-3">Category</th>
+                    <th class="py-2.5 px-3 text-right">Amount</th>
+                    <th class="py-2.5 px-3 text-right">Action</th>
+                  </tr>
+                </thead>
+                <tbody id="expenseTableBody" class="divide-y divide-slate-100"></tbody>
+              </table>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- TAB 3: SMART PACKING LIST -->
+    <section id="tabPanel-packing" class="hidden space-y-6">
+      <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+        <div class="bg-white rounded-2xl border border-slate-200 p-5 shadow-sm space-y-4">
+          <div class="flex items-center justify-between">
+            <h3 class="text-base font-bold text-slate-900">Add Packing Item</h3>
+            <span class="text-[11px] font-mono bg-slate-100 text-slate-600 px-2 py-0.5 rounded">POST /api/packing</span>
+          </div>
+          <form id="addPackingForm" onsubmit="handleAddPacking(event)" class="space-y-3">
+            <div>
+              <label for="packItemName" class="block text-xs font-medium text-slate-600 mb-1">Item Name</label>
+              <input id="packItemName" type="text" placeholder="e.g. Universal Travel Adapter" required class="w-full text-sm rounded-lg border border-slate-300 px-3 py-2 focus:outline-none focus:ring-2 focus:ring-teal-500" />
+            </div>
+            <div>
+              <label for="packCategory" class="block text-xs font-medium text-slate-600 mb-1">Category</label>
+              <select id="packCategory" class="w-full text-sm rounded-lg border border-slate-300 px-3 py-2 bg-white focus:outline-none focus:ring-2 focus:ring-teal-500">
+                <option value="Documents">Documents</option>
+                <option value="Clothing">Clothing</option>
+                <option value="Electronics">Electronics</option>
+                <option value="Toiletries">Toiletries</option>
+                <option value="Essentials">Essentials</option>
+              </select>
+            </div>
+            <button id="submitPackingBtn" type="submit" class="w-full bg-teal-600 hover:bg-teal-700 text-white font-semibold text-sm py-2.5 rounded-lg shadow-sm transition">
+              + Add to Checklist
+            </button>
+          </form>
+
+          <div class="pt-4 border-t border-slate-100 space-y-2">
+            <p class="text-xs font-medium text-slate-600">Need destination-specific gear?</p>
+            <button id="autoSuggestPackingBtn" type="button" onclick="autoSuggestPacking()" class="w-full bg-emerald-50 hover:bg-emerald-100 text-emerald-800 border border-emerald-200 font-semibold text-xs py-2.5 px-3 rounded-lg transition">
+              Auto-Generate Smart Essentials for Trip
+            </button>
+          </div>
+        </div>
+
+        <div class="lg:col-span-2 bg-white rounded-2xl border border-slate-200 p-5 shadow-sm space-y-4">
+          <div class="flex flex-wrap items-center justify-between gap-2">
+            <div>
+              <h3 class="text-base font-bold text-slate-900">Packing Checklist</h3>
+              <p id="packingProgressSubtext" class="text-xs text-slate-500">0 of 0 items packed</p>
+            </div>
+            <select id="packFilterCategory" onchange="renderPacking()" class="text-xs bg-slate-100 border border-slate-200 rounded-lg px-3 py-1.5 text-slate-700">
+              <option value="all">All Categories</option>
+              <option value="Documents">Documents</option>
+              <option value="Clothing">Clothing</option>
+              <option value="Electronics">Electronics</option>
+              <option value="Toiletries">Toiletries</option>
+              <option value="Essentials">Essentials</option>
+            </select>
+          </div>
+
+          <div class="w-full h-2.5 bg-slate-100 rounded-full overflow-hidden">
+            <div id="packingProgressBar" class="h-full bg-teal-600 transition-all duration-300" style="width: 0%"></div>
+          </div>
+
+          <div id="packingListContainer" class="grid grid-cols-1 sm:grid-cols-2 gap-2.5 pt-2"></div>
+        </div>
+      </div>
+    </section>
+
+    <!-- TAB 4: AI TRAVEL CONCIERGE -->
+    <section id="tabPanel-assistant" class="hidden space-y-6">
+      <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+        <!-- Quick Prompts & Context -->
+        <div class="bg-white rounded-2xl border border-slate-200 p-5 shadow-sm space-y-4">
+          <div>
+            <span class="text-[11px] font-mono bg-teal-50 text-teal-700 border border-teal-200 px-2 py-0.5 rounded">POST /api/assistant/ask</span>
+            <h3 class="text-base font-bold text-slate-900 mt-2">Smart Travel Concierge</h3>
+            <p class="text-xs text-slate-500 mt-1">Queries the backend assistant endpoint with your active trip's destination, dates, and remaining budget.</p>
+          </div>
+
+          <div class="space-y-2">
+            <p class="text-xs font-semibold uppercase tracking-wider text-slate-400">One-Click Prompts</p>
+            <button id="promptBtn-itinerary" type="button" onclick="sendQuickPrompt('Suggest a must-see afternoon activity and scenic viewpoint')" class="w-full text-left text-xs font-medium p-3 rounded-xl bg-slate-50 hover:bg-teal-50 hover:text-teal-800 border border-slate-200 transition">
+              "Suggest a must-see afternoon activity &amp; scenic viewpoint"
+            </button>
+            <button id="promptBtn-food" type="button" onclick="sendQuickPrompt('What local food specialties and dining spots should I try?')" class="w-full text-left text-xs font-medium p-3 rounded-xl bg-slate-50 hover:bg-teal-50 hover:text-teal-800 border border-slate-200 transition">
+              "What local food specialties and dining spots should I try?"
+            </button>
+            <button id="promptBtn-budget" type="button" onclick="sendQuickPrompt('How can I optimize my remaining trip budget and transit costs?')" class="w-full text-left text-xs font-medium p-3 rounded-xl bg-slate-50 hover:bg-teal-50 hover:text-teal-800 border border-slate-200 transition">
+              "How can I optimize my remaining trip budget and transit costs?"
+            </button>
+            <button id="promptBtn-packing" type="button" onclick="sendQuickPrompt('What weather gear and packing essentials do I need?')" class="w-full text-left text-xs font-medium p-3 rounded-xl bg-slate-50 hover:bg-teal-50 hover:text-teal-800 border border-slate-200 transition">
+              "What weather gear and packing essentials do I need?"
+            </button>
+          </div>
+        </div>
+
+        <!-- Chat Thread -->
+        <div class="lg:col-span-2 bg-white rounded-2xl border border-slate-200 p-5 shadow-sm flex flex-col h-[480px]">
+          <div id="assistantChatHistory" class="flex-1 overflow-y-auto custom-scroll space-y-3 pr-2"></div>
+
+          <form id="assistantChatForm" onsubmit="handleAskAssistant(event)" class="mt-4 pt-3 border-t border-slate-100 flex gap-2">
+            <input id="assistantInput" type="text" placeholder="Ask about local transit, hidden gems, food, or itinerary ideas..." required class="flex-1 text-sm rounded-xl border border-slate-300 px-3.5 py-2.5 focus:outline-none focus:ring-2 focus:ring-teal-500" />
+            <button id="sendAssistantBtn" type="submit" class="bg-teal-600 hover:bg-teal-700 text-white font-semibold text-sm px-5 py-2.5 rounded-xl shadow-sm transition">
+              Ask
+            </button>
+          </form>
+        </div>
+      </div>
+    </section>
+
+    <!-- TAB 5: BACKEND API & LOGS -->
+    <section id="tabPanel-backend" class="hidden space-y-6">
+      <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+        <!-- Backend Architecture & Endpoint Tester -->
+        <div class="bg-white rounded-2xl border border-slate-200 p-5 shadow-sm space-y-4">
+          <h3 class="text-base font-bold text-slate-900">Backend REST API Tester</h3>
+          <p class="text-xs text-slate-600 leading-relaxed">
+            Every action in the UI dispatches a structured REST request (`GET`, `POST`, `PATCH`, `DELETE`) to the embedded API controller (mirroring <code class="text-teal-700">backend/app.py</code> and <code class="text-teal-700">backend/server.js</code>).
+          </p>
+
+          <div class="space-y-2 pt-1">
+            <p class="text-xs font-semibold uppercase tracking-wider text-slate-400">Trigger Sample API Calls</p>
+            <button id="testApiHealthBtn" type="button" onclick="triggerTestEndpoint('GET', '/api/health')" class="w-full flex items-center justify-between text-xs font-mono p-2.5 rounded-lg bg-slate-50 hover:bg-slate-100 border border-slate-200 transition">
+              <span><strong class="text-emerald-600">GET</strong> /api/health</span>
+              <span class="text-slate-400">Run &rarr;</span>
+            </button>
+            <button id="testApiTripsBtn" type="button" onclick="triggerTestEndpoint('GET', '/api/trips')" class="w-full flex items-center justify-between text-xs font-mono p-2.5 rounded-lg bg-slate-50 hover:bg-slate-100 border border-slate-200 transition">
+              <span><strong class="text-emerald-600">GET</strong> /api/trips</span>
+              <span class="text-slate-400">Run &rarr;</span>
+            </button>
+            <button id="testApiAskBtn" type="button" onclick="triggerTestEndpoint('POST', '/api/assistant/ask')" class="w-full flex items-center justify-between text-xs font-mono p-2.5 rounded-lg bg-slate-50 hover:bg-slate-100 border border-slate-200 transition">
+              <span><strong class="text-sky-600">POST</strong> /api/assistant/ask</span>
+              <span class="text-slate-400">Run &rarr;</span>
+            </button>
+          </div>
+
+          <div class="pt-3 border-t border-slate-100 flex items-center justify-between">
+            <button id="resetDemoDataBtn" type="button" onclick="resetDemoDatabase()" class="text-xs font-medium text-rose-600 hover:text-rose-700 underline">
+              Reset Demo Database
+            </button>
+            <button id="clearApiLogsBtn" type="button" onclick="clearApiLogs()" class="text-xs font-medium text-slate-500 hover:text-slate-700 underline">
+              Clear Log Console
+            </button>
+          </div>
+        </div>
+
+        <!-- Live Request/Response Log Console -->
+        <div class="lg:col-span-2 bg-slate-900 text-slate-100 rounded-2xl p-5 shadow-sm flex flex-col h-[460px]">
+          <div class="flex items-center justify-between pb-3 border-b border-slate-800">
+            <div class="flex items-center gap-2">
+              <span class="w-2.5 h-2.5 rounded-full bg-emerald-400"></span>
+              <h3 class="text-sm font-mono font-semibold text-white">Live REST API Request &amp; Response Inspector</h3>
+            </div>
+            <span class="text-xs font-mono text-slate-400">200 OK · Persistent Storage Active</span>
+          </div>
+          <div id="apiLogConsole" class="flex-1 overflow-y-auto custom-scroll font-mono text-xs space-y-3 pt-3 pr-2"></div>
+        </div>
+      </div>
+    </section>
+
+  </main>
+
+  <!-- MODAL: CREATE NEW TRIP -->
+  <div id="newTripModal" class="fixed inset-0 z-40 bg-slate-900/50 backdrop-blur-xs hidden items-center justify-center p-4">
+    <div class="bg-white rounded-2xl max-w-md w-full p-6 shadow-xl border border-slate-200 space-y-4">
+      <div class="flex items-center justify-between">
+        <h3 class="text-lg font-bold text-slate-900">Create New Trip</h3>
+        <button id="closeNewTripModalBtn" type="button" onclick="closeTripModal()" class="text-slate-400 hover:text-slate-600 text-sm font-bold px-2 py-1">✕</button>
+      </div>
+      <form id="newTripForm" onsubmit="handleCreateTrip(event)" class="space-y-3">
+        <div class="grid grid-cols-2 gap-3">
+          <div>
+            <label for="newTripDest" class="block text-xs font-medium text-slate-600 mb-1">Destination City</label>
+            <input id="newTripDest" type="text" placeholder="e.g. Marrakech" required class="w-full text-sm rounded-lg border border-slate-300 px-3 py-2" />
+          </div>
+          <div>
+            <label for="newTripCountry" class="block text-xs font-medium text-slate-600 mb-1">Country</label>
+            <input id="newTripCountry" type="text" placeholder="e.g. Morocco" required class="w-full text-sm rounded-lg border border-slate-300 px-3 py-2" />
+          </div>
+        </div>
+        <div class="grid grid-cols-2 gap-3">
+          <div>
+            <label for="newTripStart" class="block text-xs font-medium text-slate-600 mb-1">Start Date</label>
+            <input id="newTripStart" type="date" value="2026-12-10" required class="w-full text-sm rounded-lg border border-slate-300 px-3 py-2" />
+          </div>
+          <div>
+            <label for="newTripEnd" class="block text-xs font-medium text-slate-600 mb-1">End Date</label>
+            <input id="newTripEnd" type="date" value="2026-12-15" required class="w-full text-sm rounded-lg border border-slate-300 px-3 py-2" />
+          </div>
+        </div>
+        <div class="grid grid-cols-2 gap-3">
+          <div>
+            <label for="newTripBudget" class="block text-xs font-medium text-slate-600 mb-1">Target Budget (USD)</label>
+            <input id="newTripBudget" type="number" min="100" step="50" value="1600" required class="w-full text-sm rounded-lg border border-slate-300 px-3 py-2" />
+          </div>
+          <div>
+            <label for="newTripStyle" class="block text-xs font-medium text-slate-600 mb-1">Travel Style</label>
+            <input id="newTripStyle" type="text" value="Cultural &amp; Culinary" required class="w-full text-sm rounded-lg border border-slate-300 px-3 py-2" />
+          </div>
+        </div>
+        <div>
+          <label for="newTripNotes" class="block text-xs font-medium text-slate-600 mb-1">Trip Notes / Highlights</label>
+          <input id="newTripNotes" type="text" placeholder="Medina markets, Atlas Mountains day trip..." class="w-full text-sm rounded-lg border border-slate-300 px-3 py-2" />
+        </div>
+        <div class="flex justify-end gap-2 pt-2">
+          <button id="cancelNewTripBtn" type="button" onclick="closeTripModal()" class="px-4 py-2 text-xs font-semibold text-slate-600 hover:bg-slate-100 rounded-lg">Cancel</button>
+          <button id="confirmNewTripBtn" type="submit" class="px-4 py-2 text-xs font-semibold bg-teal-600 hover:bg-teal-700 text-white rounded-lg shadow-sm">Create Trip</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- MODAL: DELETE TRIP CONFIRMATION -->
+  <div id="deleteTripModal" class="fixed inset-0 z-40 bg-slate-900/50 backdrop-blur-xs hidden items-center justify-center p-4">
+    <div class="bg-white rounded-2xl max-w-sm w-full p-6 shadow-xl border border-slate-200 space-y-4">
+      <h3 class="text-base font-bold text-slate-900">Delete Active Trip?</h3>
+      <p class="text-xs text-slate-600">This will remove the selected trip along with its itinerary, expenses, and packing items.</p>
+      <div class="flex justify-end gap-2 pt-2">
+        <button id="cancelDeleteTripBtn" type="button" onclick="closeDeleteTripModal()" class="px-4 py-2 text-xs font-semibold text-slate-600 hover:bg-slate-100 rounded-lg">Cancel</button>
+        <button id="confirmDeleteTripBtn" type="button" onclick="confirmDeleteActiveTrip()" class="px-4 py-2 text-xs font-semibold bg-rose-600 hover:bg-rose-700 text-white rounded-lg shadow-sm">Delete Trip</button>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    // =========================================================================
+    // 1. DEFAULT SEED DATA & PERSISTENCE (Simulated SQLite / REST Backend Store)
+    // =========================================================================
+    const STORAGE_KEY = 'wanderflow_fullstack_db_v1';
+
+    function getSeedData() {
+      return {
+        activeTripId: 'trip_guilin',
+        trips: [
+          {
+            id: 'trip_guilin',
+            destination: 'Guilin & Yangshuo',
+            country: 'China',
+            start_date: '2026-11-05',
+            end_date: '2026-11-09',
+            budget: 1200,
+            currency: 'USD',
+            style: 'Nature & Karst Landscapes',
+            weather_summary: '21°C · Crisp Autumn Breeze',
+            notes: 'Li River bamboo raft cruise, karst peak viewpoints, and Yangshuo countryside cycling.',
+            forecast: [
+              { day: 'Day 1', icon: '🌤️', temp: '22°C / 14°C', cond: 'Mild Sun' },
+              { day: 'Day 2', icon: '☀️', temp: '23°C / 15°C', cond: 'Clear River Breeze' },
+              { day: 'Day 3', icon: '⛅', temp: '20°C / 13°C', cond: 'Light Clouds' }
+            ],
+            itinerary: [
+              { id: 'itin_1', day: 1, time: '09:00', title: 'Elephant Trunk Hill & Two Rivers Walk', category: 'Sightseeing', location: 'Xiufeng District, Guilin', cost: 15, completed: true },
+              { id: 'itin_2', day: 1, time: '12:30', title: 'Authentic Guilin Rice Noodles Tasting', category: 'Dining', location: 'Zhengyang Pedestrian Street', cost: 8, completed: true },
+              { id: 'itin_3', day: 2, time: '08:30', title: 'Li River Scenic Bamboo Cruise to Yangshuo', category: 'Transport', location: 'Mopanshan Pier', cost: 65, completed: false },
+              { id: 'itin_4', day: 2, time: '15:30', title: 'Yulong River Countryside E-Bike Loop', category: 'Sightseeing', location: 'Yangshuo Valley', cost: 18, completed: false },
+              { id: 'itin_5', day: 3, time: '17:00', title: 'Xianggong Mountain Sunset Panorama', category: 'Sightseeing', location: 'Xingping Town', cost: 25, completed: false }
+            ],
+            expenses: [
+              { id: 'exp_1', title: 'High-Speed Rail Roundtrip Tickets', category: 'Transport', amount: 95, date: '2026-11-05' },
+              { id: 'exp_2', title: 'Karst Riverfront Boutique Hotel (4 Nights)', category: 'Lodging', amount: 340, date: '2026-11-05' },
+              { id: 'exp_3', title: 'Li River Cruise & Park Passes', category: 'Activities', amount: 105, date: '2026-11-06' },
+              { id: 'exp_4', title: 'Yangshuo Beer Fish & Night Market Dinner', category: 'Dining', amount: 42, date: '2026-11-06' }
+            ],
+            packing: [
+              { id: 'pack_1', item: 'Passport & High-Speed Rail E-Ticket', category: 'Documents', packed: true },
+              { id: 'pack_2', item: 'Breathable Walking Shoes', category: 'Clothing', packed: true },
+              { id: 'pack_3', item: 'Lightweight Windbreaker Jacket', category: 'Clothing', packed: true },
+              { id: 'pack_4', item: '20,000mAh Portable Power Bank', category: 'Electronics', packed: false },
+              { id: 'pack_5', item: 'Polarized Sunglasses & Sunscreen', category: 'Essentials', packed: false }
+            ]
+          },
+          {
+            id: 'trip_kyoto',
+            destination: 'Kyoto & Nara',
+            country: 'Japan',
+            start_date: '2026-11-18',
+            end_date: '2026-11-23',
+            budget: 2100,
+            currency: 'USD',
+            style: 'Heritage Temples & Autumn Foliage',
+            weather_summary: '16°C · Peak Maple Foliage',
+            notes: 'Arashiyama bamboo grove at dawn, Fushimi Inari shrines, and Uji matcha tea houses.',
+            forecast: [
+              { day: 'Day 1', icon: '🍁', temp: '17°C / 9°C', cond: 'Crisp & Clear' },
+              { day: 'Day 2', icon: '☀️', temp: '16°C / 8°C', cond: 'Sunny Skies' },
+              { day: 'Day 3', icon: '🌦️', temp: '14°C / 7°C', cond: 'Passing Shower' }
+            ],
+            itinerary: [
+              { id: 'itin_k1', day: 1, time: '07:30', title: 'Fushimi Inari Taisha Thousand Torii Gates', category: 'Sightseeing', location: 'Fushimi Ward', cost: 0, completed: true },
+              { id: 'itin_k2', day: 1, time: '12:00', title: 'Nishiki Market Street Food & Matcha Tour', category: 'Dining', location: 'Nakagyo Ward', cost: 35, completed: false },
+              { id: 'itin_k3', day: 2, time: '08:30', title: 'Arashiyama Bamboo Grove & Tenryu-ji Zen Garden', category: 'Sightseeing', location: 'Ukyo Ward', cost: 18, completed: false }
+            ],
+            expenses: [
+              { id: 'exp_k1', title: 'ICOCA Transit Card & Shinkansen Seat', category: 'Transport', amount: 180, date: '2026-11-18' },
+              { id: 'exp_k2', title: 'Gion Machiya Townhouse Stay', category: 'Lodging', amount: 680, date: '2026-11-18' },
+              { id: 'exp_k3', title: 'Kaiseki Autumn Dinner Reservation', category: 'Dining', amount: 110, date: '2026-11-19' }
+            ],
+            packing: [
+              { id: 'pack_k1', item: 'Passport & Visit Japan Web QR', category: 'Documents', packed: true },
+              { id: 'pack_k2', item: 'Pocket Wi-Fi / eSIM Profile', category: 'Electronics', packed: true },
+              { id: 'pack_k3', item: 'Layered Merino Wool Sweater', category: 'Clothing', packed: false },
+              { id: 'pack_k4', item: 'Coin Purse for Temple Offerings', category: 'Essentials', packed: false }
+            ]
+          },
+          {
+            id: 'trip_lisbon',
+            destination: 'Lisbon & Sintra',
+            country: 'Portugal',
+            start_date: '2026-12-02',
+            end_date: '2026-12-06',
+            budget: 1450,
+            currency: 'USD',
+            style: 'Coastal Tramways & Historic Miradouros',
+            weather_summary: '18°C · Atlantic Sun',
+            notes: 'Historic Tram 28 ride through Alfama, Pastéis de Belém, and Sintra palaces.',
+            forecast: [
+              { day: 'Day 1', icon: '☀️', temp: '19°C / 12°C', cond: 'Sunny Breeze' },
+              { day: 'Day 2', icon: '🌤️', temp: '18°C / 11°C', cond: 'Partly Cloudy' },
+              { day: 'Day 3', icon: '☀️', temp: '19°C / 12°C', cond: 'Clear Sunset' }
+            ],
+            itinerary: [
+              { id: 'itin_l1', day: 1, time: '09:30', title: 'Alfama Miradouros & São Jorge Castle Walk', category: 'Sightseeing', location: 'Alfama District', cost: 16, completed: false },
+              { id: 'itin_l2', day: 1, time: '13:00', title: 'Time Out Market Seafood & Pastéis de Nata', category: 'Dining', location: 'Cais do Sodré', cost: 28, completed: false }
+            ],
+            expenses: [
+              { id: 'exp_l1', title: 'Navegante 72h Transit & Train Pass', category: 'Transport', amount: 45, date: '2026-12-02' },
+              { id: 'exp_l2', title: 'Baixa Boutique Guesthouse', category: 'Lodging', amount: 420, date: '2026-12-02' }
+            ],
+            packing: [
+              { id: 'pack_l1', item: 'Non-Slip Cobblestone Walking Shoes', category: 'Clothing', packed: true },
+              { id: 'pack_l2', item: 'EU Type-C Power Plug Adapter', category: 'Electronics', packed: false }
+            ]
+          }
+        ]
+      };
+    }
+
+    let state = getSeedData();
+    let apiLogs = [];
+    let expenseChartInstance = null;
+    let chatMessages = [];
+
+    function loadDatabase() {
+      try {
+        const raw = localStorage.getItem(STORAGE_KEY);
+        if (raw) {
+          const parsed = JSON.parse(raw);
+          if (parsed && Array.isArray(parsed.trips) && parsed.trips.length > 0) {
+            state = parsed;
+          }
+        }
+      } catch (e) {
+        // Fallback to in-memory seed state if sandboxed localStorage is restricted
+      }
+    }
+
+    function saveDatabase() {
+      try {
+        localStorage.setItem(STORAGE_KEY, JSON.stringify(state));
+      } catch (e) {
+        // Ignore storage quota/sandbox error
+      }
+    }
+
+    function getActiveTrip() {
+      return state.trips.find(t => t.id === state.activeTripId) || state.trips[0];
+    }
+
+    // =========================================================================
+    // 2. EMBEDDED BACKEND REST API ROUTER & LOGGER
+    // =========================================================================
+    function dispatchApiRequest(method, path, payload) {
+      const startTime = performance.now();
+      let status = 200;
+      let responseBody = {};
+      const trip = getActiveTrip();
+
+      if (method === 'GET' && path === '/api/health') {
+        responseBody = {
+          status: 'ok',
+          service: 'WanderFlow Travel Assistant REST API',
+          storage: 'SQLite / LocalStorage Synced',
+          active_trips: state.trips.length,
+          timestamp: new Date().toISOString()
+        };
+      } else if (method === 'GET' && path === '/api/trips') {
+        responseBody = {
+          count: state.trips.length,
+          activeTripId: state.activeTripId,
+          trips: state.trips.map(t => ({
+            id: t.id,
+            destination: t.destination,
+            country: t.country,
+            budget: t.budget,
+            itinerary_count: t.itinerary.length,
+            expense_count: t.expenses.length
+          }))
+        };
+      } else if (method === 'POST' && path === '/api/trips') {
+        status = 201;
+        const newTrip = {
+          id: 'trip_' + Date.now(),
+          destination: payload.destination,
+          country: payload.country,
+          start_date: payload.start_date,
+          end_date: payload.end_date,
+          budget: Number(payload.budget) || 1500,
+          currency: 'USD',
+          style: payload.style || 'Cultural & Scenic',
+          weather_summary: '21°C · Pleasant Forecast',
+          notes: payload.notes || 'Custom itinerary created via WanderFlow.',
+          forecast: [
+            { day: 'Day 1', icon: '☀️', temp: '22°C / 14°C', cond: 'Sunny' },
+            { day: 'Day 2', icon: '🌤️', temp: '21°C / 13°C', cond: 'Mild Breeze' },
+            { day: 'Day 3', icon: '☀️', temp: '23°C / 15°C', cond: 'Clear Skies' }
+          ],
+          itinerary: [],
+          expenses: [],
+          packing: [
+            { id: 'pack_' + Date.now() + '_1', item: 'Passport & Travel Documents', category: 'Documents', packed: false },
+            { id: 'pack_' + Date.now() + '_2', item: 'Universal Power Adapter', category: 'Electronics', packed: false }
+          ]
+        };
+        state.trips.push(newTrip);
+        state.activeTripId = newTrip.id;
+        saveDatabase();
+        responseBody = { status: 'created', trip: newTrip };
+      } else if (method === 'DELETE' && path.startsWith('/api/trips/')) {
+        const id = path.split('/').pop();
+        if (state.trips.length <= 1) {
+          status = 400;
+          responseBody = { error: 'Cannot delete the only remaining trip.' };
+        } else {
+          state.trips = state.trips.filter(t => t.id !== id);
+          state.activeTripId = state.trips[0].id;
+          saveDatabase();
+          responseBody = { status: 'deleted', deletedId: id, activeTripId: state.activeTripId };
+        }
+      } else if (method === 'POST' && path.endsWith('/itinerary')) {
+        status = 201;
+        const newItem = {
+          id: 'itin_' + Date.now(),
+          day: Number(payload.day) || 1,
+          time: payload.time || '10:00',
+          title: payload.title,
+          category: payload.category || 'Sightseeing',
+          location: payload.location || trip.destination,
+          cost: Number(payload.cost) || 0,
+          completed: false
+        };
+        trip.itinerary.push(newItem);
+        trip.itinerary.sort((a, b) => (a.day - b.day) || a.time.localeCompare(b.time));
+        saveDatabase();
+        responseBody = { status: 'created', item: newItem };
+      } else if (method === 'PATCH' && path.startsWith('/api/itinerary/')) {
+        const itemId = path.split('/').pop();
+        const item = trip.itinerary.find(i => i.id === itemId);
+        if (item) {
+          item.completed = Boolean(payload.completed);
+          saveDatabase();
+          responseBody = { status: 'updated', item };
+        } else {
+          status = 404;
+          responseBody = { error: 'Itinerary item not found' };
+        }
+      } else if (method === 'DELETE' && path.startsWith('/api/itinerary/')) {
+        const itemId = path.split('/').pop();
+        trip.itinerary = trip.itinerary.filter(i => i.id !== itemId);
+        saveDatabase();
+        responseBody = { status: 'deleted', id: itemId };
+      } else if (method === 'POST' && path.endsWith('/expenses')) {
+        status = 201;
+        const newExp = {
+          id: 'exp_' + Date.now(),
+          title: payload.title,
+          category: payload.category || 'Dining',
+          amount: Number(payload.amount) || 0,
+          date: payload.date || trip.start_date
+        };
+        trip.expenses.unshift(newExp);
+        saveDatabase();
+        responseBody = { status: 'created', expense: newExp };
+      } else if (method === 'DELETE' && path.startsWith('/api/expenses/')) {
+        const expId = path.split('/').pop();
+        trip.expenses = trip.expenses.filter(e => e.id !== expId);
+        saveDatabase();
+        responseBody = { status: 'deleted', id: expId };
+      } else if (method === 'POST' && path.endsWith('/packing')) {
+        status = 201;
+        const newPack = {
+          id: 'pack_' + Date.now() + '_' + Math.floor(Math.random() * 1000),
+          item: payload.item,
+          category: payload.category || 'Essentials',
+          packed: false
+        };
+        trip.packing.push(newPack);
+        saveDatabase();
+        responseBody = { status: 'created', packingItem: newPack };
+      } else if (method === 'PATCH' && path.startsWith('/api/packing/')) {
+        const packId = path.split('/').pop();
+        const found = trip.packing.find(p => p.id === packId);
+        if (found) {
+          found.packed = Boolean(payload.packed);
+          saveDatabase();
+          responseBody = { status: 'updated', item: found };
+        }
+      } else if (method === 'DELETE' && path.startsWith('/api/packing/')) {
+        const packId = path.split('/').pop();
+        trip.packing = trip.packing.filter(p => p.id !== packId);
+        saveDatabase();
+        responseBody = { status: 'deleted', id: packId };
+      } else if (method === 'POST' && path === '/api/assistant/ask') {
+        const q = (payload.prompt || '').toLowerCase();
+        const spent = trip.expenses.reduce((acc, e) => acc + e.amount, 0);
+        const remaining = Math.max(0, trip.budget - spent);
+        let replyText = '';
+        let suggested = null;
+
+        if (q.includes('food') || q.includes('eat') || q.includes('dining')) {
+          replyText = `For ${trip.destination}, focus on authentic neighborhood specialties away from main tourist plazas. With $${remaining.toFixed(0)} remaining in your budget, setting aside $35–$45/day lets you pair casual street-market lunches with a signature regional dinner.`;
+          suggested = {
+            day: 2,
+            time: '19:00',
+            title: `${trip.destination} Culinary Night Market & Local Tasting`,
+            category: 'Dining',
+            location: `${trip.destination} Old Quarter`,
+            cost: 32
+          };
+        } else if (q.includes('budget') || q.includes('cost') || q.includes('transit')) {
+          replyText = `You have spent $${spent.toFixed(0)} out of $${trip.budget.toFixed(0)} ($${remaining.toFixed(0)} remaining). Grouping stops by district in ${trip.destination} and picking up a multi-day transit card will save roughly 25–30% on point-to-point rides.`;
+          suggested = {
+            day: 1,
+            time: '08:30',
+            title: `Pick Up 72-Hour Regional Transit & Museum Pass`,
+            category: 'Transport',
+            location: `${trip.destination} Central Station`,
+            cost: 28
+          };
+        } else if (q.includes('pack') || q.includes('weather') || q.includes('gear')) {
+          replyText = `Current forecast for ${trip.destination} is ${trip.weather_summary}. Pack breathable layers, broken-in walking shoes for 12,000+ daily steps, a compact rain shell, and a 20,000mAh power bank for navigation and photos.`;
+          suggested = {
+            day: 1,
+            time: '16:30',
+            title: `Golden Hour Scenic Viewpoint Walk`,
+            category: 'Sightseeing',
+            location: `${trip.destination} Panorama Ridge`,
+            cost: 15
+          };
+        } else {
+          replyText = `For ${trip.destination} (${trip.style}), start mornings at flagship landmarks before 9:00 AM to beat crowds, schedule a relaxed 2-hour midday café break, and reserve sunset viewpoints in advance.`;
+          suggested = {
+            day: 2,
+            time: '16:00',
+            title: `Guided Heritage Walk & Sunset Overlook (${trip.destination})`,
+            category: 'Sightseeing',
+            location: `${trip.destination} Historic Center`,
+            cost: 24
+          };
+        }
+        responseBody = {
+          reply: replyText,
+          destination: trip.destination,
+          remaining_budget: remaining,
+          suggested_activity: suggested
+        };
+      }
+
+      const latencyMs = Math.max(2, Math.round(performance.now() - startTime));
+      const logEntry = {
+        id: 'log_' + Date.now() + '_' + Math.floor(Math.random() * 999),
+        timestamp: new Date().toLocaleTimeString(),
+        method,
+        path,
+        status,
+        latencyMs,
+        request: payload || null,
+        response: responseBody
+      };
+      apiLogs.unshift(logEntry);
+      renderApiLogs();
+      return responseBody;
+    }
+
+    // =========================================================================
+    // 3. UI RENDERING & STATE SYNCHRONIZATION
+    // =========================================================================
+    function showToast(message, type = 'success') {
+      const container = document.getElementById('toastContainer');
+      const toast = document.createElement('div');
+      const bg = type === 'error' ? 'bg-rose-600' : 'bg-slate-900';
+      toast.className = `${bg} text-white text-xs font-medium px-4 py-2.5 rounded-xl shadow-lg border border-white/10 transition-all duration-300 pointer-events-auto`;
+      toast.textContent = message;
+      container.appendChild(toast);
+      setTimeout(() => {
+        toast.style.opacity = '0';
+        setTimeout(() => toast.remove(), 300);
+      }, 2600);
+    }
+
+    function switchTab(tabName) {
+      const tabs = ['itinerary', 'budget', 'packing', 'assistant', 'backend'];
+      tabs.forEach(t => {
+        const panel = document.getElementById(`tabPanel-${t}`);
+        const btn = document.getElementById(`tabBtn-${t}`);
+        if (t === tabName) {
+          panel.classList.remove('hidden');
+          btn.className = 'tab-btn px-4 py-2.5 text-xs sm:text-sm font-semibold border-b-2 border-teal-600 text-teal-700 whitespace-nowrap transition flex items-center gap-1.5';
+        } else {
+          panel.classList.add('hidden');
+          btn.className = 'tab-btn px-4 py-2.5 text-xs sm:text-sm font-medium border-b-2 border-transparent text-slate-600 hover:text-slate-900 whitespace-nowrap transition flex items-center gap-1.5';
+        }
+      });
+      if (tabName === 'budget') {
+        renderBudgetAndChart();
+      }
+    }
+
+    function renderAll() {
+      const trip = getActiveTrip();
+
+      // Populate trip selector
+      const select = document.getElementById('tripSelect');
+      select.innerHTML = state.trips.map(t =>
+        `<option value="${t.id}" ${t.id === trip.id ? 'selected' : ''}>${t.destination} (${t.country})</option>`
+      ).join('');
+
+      // Populate Hero
+      document.getElementById('heroCountryBadge').textContent = trip.country;
+      document.getElementById('heroStyleBadge').textContent = trip.style;
+      document.getElementById('heroWeatherBadge').textContent = trip.weather_summary;
+      document.getElementById('heroDestination').textContent = trip.destination;
+      document.getElementById('heroNotes').textContent = trip.notes;
+      document.getElementById('heroDates').textContent = `${trip.start_date} – ${trip.end_date}`;
+
+      // KPIs
+      const completedItin = trip.itinerary.filter(i => i.completed).length;
+      document.getElementById('kpiActivities').textContent = `${completedItin} / ${trip.itinerary.length}`;
+
+      const totalSpent = trip.expenses.reduce((sum, e) => sum + e.amount, 0);
+      document.getElementById('kpiBudgetSpent').textContent = `$${totalSpent.toFixed(0)}`;
+      document.getElementById('kpiBudgetTotal').textContent = `of $${trip.budget.toLocaleString()}`;
+
+      const packedCount = trip.packing.filter(p => p.packed).length;
+      const packPct = trip.packing.length ? Math.round((packedCount / trip.packing.length) * 100) : 0;
+      document.getElementById('kpiPacking').textContent = `${packPct}%`;
+      document.getElementById('kpiPackingCount').textContent = `${packedCount} of ${trip.packing.length} items`;
+
+      // Weather Forecast Snapshot
+      const forecastGrid = document.getElementById('weatherForecastGrid');
+      forecastGrid.innerHTML = (trip.forecast || []).map(f => `
+        <div class="p-2.5 rounded-xl bg-slate-50 border border-slate-200/80">
+          <p class="text-[11px] font-semibold text-slate-500">${f.day}</p>
+          <p class="text-xl my-1">${f.icon}</p>
+          <p class="text-xs font-bold text-slate-800">${f.temp}</p>
+          <p class="text-[11px] text-slate-500">${f.cond}</p>
+        </div>
+      `).join('');
+
+      // Populate Day Filter options
+      const daySelect = document.getElementById('itinFilterDay');
+      const currentDayFilter = daySelect.value;
+      const days = [...new Set(trip.itinerary.map(i => i.day))].sort((a, b) => a - b);
+      daySelect.innerHTML = `<option value="all">All Days</option>` +
+        days.map(d => `<option value="${d}" ${String(d) === currentDayFilter ? 'selected' : ''}>Day ${d}</option>`).join('');
+
+      renderItinerary();
+      renderBudgetAndChart();
+      renderPacking();
+      updateCurrencyConverter();
+    }
+
+    function renderItinerary() {
+      const trip = getActiveTrip();
+      const dayFilter = document.getElementById('itinFilterDay').value;
+      const catFilter = document.getElementById('itinFilterCategory').value;
+      const container = document.getElementById('itineraryListContainer');
+
+      const filtered = trip.itinerary.filter(item => {
+        const matchDay = dayFilter === 'all' || String(item.day) === dayFilter;
+        const matchCat = catFilter === 'all' || item.category === catFilter;
+        return matchDay && matchCat;
+      });
+
+      if (filtered.length === 0) {
+        container.innerHTML = `
+          <div class="py-12 text-center text-slate-400 text-sm">
+            No itinerary activities match the current filter. Use the form on the left to add one!
+          </div>
+        `;
+        return;
+      }
+
+      const categoryColors = {
+        Sightseeing: 'bg-teal-50 text-teal-700 border-teal-200',
+        Dining: 'bg-amber-50 text-amber-700 border-amber-200',
+        Transport: 'bg-sky-50 text-sky-700 border-sky-200',
+        Lodging: 'bg-indigo-50 text-indigo-700 border-indigo-200'
+      };
+
+      container.innerHTML = filtered.map(item => {
+        const badgeStyle = categoryColors[item.category] || 'bg-slate-100 text-slate-700 border-slate-200';
+        return `
+          <div class="py-3.5 flex items-start justify-between gap-3 group">
+            <div class="flex items-start gap-3">
+              <input
+                type="checkbox"
+                ${item.completed ? 'checked' : ''}
+                onchange="toggleItineraryItem('${item.id}', this.checked)"
+                class="mt-1 w-4 h-4 rounded border-slate-300 text-teal-600 focus:ring-teal-500 cursor-pointer"
+              />
+              <div>
+                <div class="flex flex-wrap items-center gap-2">
+                  <span class="text-xs font-bold px-2 py-0.5 rounded bg-slate-100 text-slate-700">Day ${item.day} · ${item.time}</span>
+                  <span class="text-[11px] font-medium px-2 py-0.5 rounded-full border ${badgeStyle}">${item.category}</span>
+                  ${item.cost > 0 ? `<span class="text-xs font-semibold text-slate-600">$${item.cost}</span>` : `<span class="text-xs text-emerald-600 font-medium">Free</span>`}
+                </div>
+                <p class="text-sm font-semibold mt-1 ${item.completed ? 'line-through text-slate-400' : 'text-slate-900'}">${item.title}</p>
+                <p class="text-xs text-slate-500">📍 ${item.location}</p>
+              </div>
+            </div>
+            <button
+              type="button"
+              onclick="deleteItineraryItem('${item.id}')"
+              class="text-xs text-slate-400 hover:text-rose-600 px-2 py-1 rounded transition"
+              title="Remove Activity"
+            >
+              Remove
+            </button>
+          </div>
+        `;
+      }).join('');
+    }
+
+    function renderBudgetAndChart() {
+      const trip = getActiveTrip();
+      const totalSpent = trip.expenses.reduce((sum, e) => sum + e.amount, 0);
+      const remaining = trip.budget - totalSpent;
+      const pct = trip.budget > 0 ? Math.min(100, Math.round((totalSpent / trip.budget) * 100)) : 0;
+
+      const metricsEl = document.getElementById('budgetSummaryMetrics');
+      metricsEl.innerHTML = `
+        <div class="p-3 rounded-xl bg-slate-50 border border-slate-200 flex items-center justify-between">
+          <span class="text-slate-600">Target Trip Budget</span>
+          <span class="font-bold text-slate-900">$${trip.budget.toFixed(2)}</span>
+        </div>
+        <div class="p-3 rounded-xl bg-slate-50 border border-slate-200 flex items-center justify-between">
+          <span class="text-slate-600">Total Logged Expenses</span>
+          <span class="font-bold text-teal-700">$${totalSpent.toFixed(2)} (${pct}%)</span>
+        </div>
+        <div class="p-3 rounded-xl ${remaining >= 0 ? 'bg-emerald-50 border-emerald-200 text-emerald-900' : 'bg-rose-50 border-rose-200 text-rose-900'} border flex items-center justify-between">
+          <span class="font-medium">${remaining >= 0 ? 'Remaining Balance' : 'Over Budget'}</span>
+          <span class="font-bold">$${Math.abs(remaining).toFixed(2)}</span>
+        </div>
+      `;
+
+      // Render Expense Table
+      const tbody = document.getElementById('expenseTableBody');
+      if (trip.expenses.length === 0) {
+        tbody.innerHTML = `<tr><td colspan="5" class="py-8 text-center text-slate-400">No expenses recorded yet.</td></tr>`;
+      } else {
+        tbody.innerHTML = trip.expenses.map(e => `
+          <tr class="hover:bg-slate-50/80">
+            <td class="py-2.5 px-3 text-xs text-slate-500 whitespace-nowrap">${e.date}</td>
+            <td class="py-2.5 px-3 font-medium text-slate-800">${e.title}</td>
+            <td class="py-2.5 px-3"><span class="text-xs px-2 py-0.5 rounded-full bg-slate-100 text-slate-700">${e.category}</span></td>
+            <td class="py-2.5 px-3 text-right font-semibold text-slate-900">$${e.amount.toFixed(2)}</td>
+            <td class="py-2.5 px-3 text-right">
+              <button type="button" onclick="deleteExpenseItem('${e.id}')" class="text-xs text-rose-600 hover:underline">Delete</button>
+            </td>
+          </tr>
+        `).join('');
+      }
+
+      // Update Chart.js Doughnut
+      const categories = ['Lodging', 'Transport', 'Dining', 'Activities', 'Shopping'];
+      const totals = categories.map(cat =>
+        trip.expenses.filter(e => e.category === cat).reduce((sum, e) => sum + e.amount, 0)
+      );
+
+      const ctx = document.getElementById('expenseChart');
+      if (!ctx || typeof Chart === 'undefined') return;
+
+      if (expenseChartInstance) {
+        expenseChartInstance.destroy();
+      }
+
+      expenseChartInstance = new Chart(ctx, {
+        type: 'doughnut',
+        data: {
+          labels: categories,
+          datasets: [{
+            data: totals.some(v => v > 0) ? totals : [1],
+            backgroundColor: totals.some(v => v > 0)
+              ? ['#0d9488', '#0284c7', '#f59e0b', '#6366f1', '#ec4899']
+              : ['#e2e8f0'],
+            borderWidth: 2,
+            borderColor: '#ffffff'
+          }]
+        },
+        options: {
+          responsive: true,
+          maintainAspectRatio: false,
+          plugins: {
+            legend: {
+              position: 'bottom',
+              labels: { boxWidth: 12, font: { size: 11 } }
+            }
+          }
+        }
+      });
+    }
+
+    function updateCurrencyConverter() {
+      const amount = parseFloat(document.getElementById('convAmount').value) || 0;
+      const target = document.getElementById('convTarget').value;
+      const rates = {
+        CNY: { rate: 7.24, symbol: '¥' },
+        EUR: { rate: 0.92, symbol: '€' },
+        JPY: { rate: 153.8, symbol: '¥' },
+        MAD: { rate: 9.85, symbol: 'DH ' },
+        GBP: { rate: 0.79, symbol: '£' }
+      };
+      const info = rates[target] || { rate: 1, symbol: '$' };
+      const converted = (amount * info.rate).toFixed(2);
+      document.getElementById('convResult').textContent = `${info.symbol}${converted} ${target}`;
+    }
+
+    function renderPacking() {
+      const trip = getActiveTrip();
+      const catFilter = document.getElementById('packFilterCategory').value;
+      const packedCount = trip.packing.filter(p => p.packed).length;
+      const pct = trip.packing.length ? Math.round((packedCount / trip.packing.length) * 100) : 0;
+
+      document.getElementById('packingProgressSubtext').textContent = `${packedCount} of ${trip.packing.length} items packed (${pct}%)`;
+      document.getElementById('packingProgressBar').style.width = `${pct}%`;
+
+      const filtered = trip.packing.filter(p => catFilter === 'all' || p.category === catFilter);
+      const container = document.getElementById('packingListContainer');
+
+      if (filtered.length === 0) {
+        container.innerHTML = `<div class="col-span-2 py-8 text-center text-slate-400 text-sm">No packing items in this category yet.</div>`;
+        return;
+      }
+
+      container.innerHTML = filtered.map(p => `
+        <div class="p-3 rounded-xl border ${p.packed ? 'bg-slate-50 border-slate-200' : 'bg-white border-slate-200'} flex items-center justify-between gap-2">
+          <label class="flex items-center gap-2.5 cursor-pointer flex-1">
+            <input
+              type="checkbox"
+              ${p.packed ? 'checked' : ''}
+              onchange="togglePackingItem('${p.id}', this.checked)"
+              class="w-4 h-4 rounded border-slate-300 text-teal-600 focus:ring-teal-500"
+            />
+            <div>
+              <p class="text-sm font-medium ${p.packed ? 'line-through text-slate-400' : 'text-slate-800'}">${p.item}</p>
+              <span class="text-[11px] text-slate-400">${p.category}</span>
+            </div>
+          </label>
+          <button type="button" onclick="deletePackingItem('${p.id}')" class="text-xs text-slate-400 hover:text-rose-600 px-1.5 py-0.5">✕</button>
+        </div>
+      `).join('');
+    }
+
+    function renderAssistantChat() {
+      const container = document.getElementById('assistantChatHistory');
+      if (chatMessages.length === 0) {
+        const trip = getActiveTrip();
+        chatMessages.push({
+          role: 'assistant',
+          text: `Hello! I'm connected to your ${trip.destination} trip profile (${trip.start_date} to ${trip.end_date}). Ask me for itinerary ideas, local dining tips, or budget strategies!`,
+          suggested: null
+        });
+      }
+
+      container.innerHTML = chatMessages.map((msg, idx) => {
+        if (msg.role === 'user') {
+          return `
+            <div class="flex justify-end">
+              <div class="bg-teal-600 text-white text-xs sm:text-sm rounded-2xl rounded-br-xs px-4 py-2.5 max-w-md shadow-xs">
+                ${msg.text}
+              </div>
+            </div>
+          `;
+        }
+        return `
+          <div class="flex justify-start">
+            <div class="bg-slate-100 text-slate-800 text-xs sm:text-sm rounded-2xl rounded-bl-xs px-4 py-3 max-w-lg space-y-2 border border-slate-200">
+              <p class="leading-relaxed">${msg.text}</p>
+              ${msg.suggested ? `
+                <div class="p-2.5 rounded-xl bg-white border border-teal-200 flex items-center justify-between gap-3">
+                  <div>
+                    <p class="text-xs font-bold text-slate-900">✨ ${msg.suggested.title}</p>
+                    <p class="text-[11px] text-slate-500">Day ${msg.suggested.day} at ${msg.suggested.time} · $${msg.suggested.cost}</p>
+                  </div>
+                  <button
+                    type="button"
+                    onclick="addSuggestedActivity(${idx})"
+                    class="text-xs font-semibold bg-teal-600 hover:bg-teal-700 text-white px-3 py-1.5 rounded-lg whitespace-nowrap transition"
+                  >
+                    + Add to Trip
+                  </button>
+                </div>
+              ` : ''}
+            </div>
+          </div>
+        `;
+      }).join('');
+      container.scrollTop = container.scrollHeight;
+    }
+
+    function renderApiLogs() {
+      document.getElementById('apiLogCountBadge').textContent = String(apiLogs.length);
+      const consoleEl = document.getElementById('apiLogConsole');
+      if (apiLogs.length === 0) {
+        consoleEl.innerHTML = `<p class="text-slate-500">No API requests logged yet. Interact with any tab or click a test endpoint on the left.</p>`;
+        return;
+      }
+      consoleEl.innerHTML = apiLogs.map(log => `
+        <div class="p-3 rounded-xl bg-slate-800/90 border border-slate-700 space-y-1.5">
+          <div class="flex items-center justify-between">
+            <div class="flex items-center gap-2">
+              <span class="px-2 py-0.5 rounded text-[11px] font-bold ${
+                log.method === 'GET' ? 'bg-emerald-500/20 text-emerald-300' :
+                log.method === 'POST' ? 'bg-sky-500/20 text-sky-300' :
+                log.method === 'PATCH' ? 'bg-amber-500/20 text-amber-300' :
+                'bg-rose-500/20 text-rose-300'
+              }">${log.method}</span>
+              <span class="text-slate-200 font-semibold">${log.path}</span>
+            </div>
+            <span class="text-slate-400 text-[11px]">${log.status} OK · ${log.latencyMs}ms · ${log.timestamp}</span>
+          </div>
+          ${log.request ? `<pre class="text-[11px] text-amber-200/90 overflow-x-auto bg-slate-950/60 p-2 rounded">Req: ${JSON.stringify(log.request)}</pre>` : ''}
+          <pre class="text-[11px] text-emerald-300/90 overflow-x-auto bg-slate-950/60 p-2 rounded">Res: ${JSON.stringify(log.response, null, 2)}</pre>
+        </div>
+      `).join('');
+    }
+
+    // =========================================================================
+    // 4. USER INTERACTION HANDLERS
+    // =========================================================================
+    function handleTripChange(tripId) {
+      state.activeTripId = tripId;
+      saveDatabase();
+      dispatchApiRequest('GET', '/api/trips');
+      chatMessages = [];
+      renderAll();
+      renderAssistantChat();
+      showToast('Switched active trip');
+    }
+
+    function openTripModal() {
+      const m = document.getElementById('newTripModal');
+      m.classList.remove('hidden');
+      m.classList.add('flex');
+    }
+
+    function closeTripModal() {
+      const m = document.getElementById('newTripModal');
+      m.classList.add('hidden');
+      m.classList.remove('flex');
+    }
+
+    function handleCreateTrip(e) {
+      e.preventDefault();
+      const payload = {
+        destination: document.getElementById('newTripDest').value.trim(),
+        country: document.getElementById('newTripCountry').value.trim(),
+        start_date: document.getElementById('newTripStart').value,
+        end_date: document.getElementById('newTripEnd').value,
+        budget: parseFloat(document.getElementById('newTripBudget').value) || 1500,
+        style: document.getElementById('newTripStyle').value.trim(),
+        notes: document.getElementById('newTripNotes').value.trim()
+      };
+      dispatchApiRequest('POST', '/api/trips', payload);
+      closeTripModal();
+      e.target.reset();
+      chatMessages = [];
+      renderAll();
+      renderAssistantChat();
+      showToast(`Created trip to ${payload.destination}!`);
+    }
+
+    function openDeleteTripModal() {
+      const m = document.getElementById('deleteTripModal');
+      m.classList.remove('hidden');
+      m.classList.add('flex');
+    }
+
+    function closeDeleteTripModal() {
+      const m = document.getElementById('deleteTripModal');
+      m.classList.add('hidden');
+      m.classList.remove('flex');
+    }
+
+    function confirmDeleteActiveTrip() {
+      const res = dispatchApiRequest('DELETE', `/api/trips/${state.activeTripId}`);
+      closeDeleteTripModal();
+      if (res.error) {
+        showToast(res.error, 'error');
+        return;
+      }
+      chatMessages = [];
+      renderAll();
+      renderAssistantChat();
+      showToast('Trip deleted');
+    }
+
+    function handleAddItinerary(e) {
+      e.preventDefault();
+      const trip = getActiveTrip();
+      const payload = {
+        day: parseInt(document.getElementById('itinDay').value, 10) || 1,
+        time: document.getElementById('itinTime').value,
+        title: document.getElementById('itinTitle').value.trim(),
+        category: document.getElementById('itinCategory').value,
+        cost: parseFloat(document.getElementById('itinCost').value) || 0,
+        location: document.getElementById('itinLocation').value.trim()
+      };
+      dispatchApiRequest('POST', `/api/trips/${trip.id}/itinerary`, payload);
+      document.getElementById('itinTitle').value = '';
+      document.getElementById('itinLocation').value = '';
+      renderAll();
+      showToast('Added activity to itinerary');
+    }
+
+    function toggleItineraryItem(itemId, completed) {
+      dispatchApiRequest('PATCH', `/api/itinerary/${itemId}`, { completed });
+      renderAll();
+    }
+
+    function deleteItineraryItem(itemId) {
+      dispatchApiRequest('DELETE', `/api/itinerary/${itemId}`);
+      renderAll();
+      showToast('Removed itinerary item');
+    }
+
+    function copyItineraryText() {
+      const trip = getActiveTrip();
+      const lines = [
+        `${trip.destination} (${trip.country}) — ${trip.start_date} to ${trip.end_date}`,
+        ...trip.itinerary.map(i => `Day ${i.day} [${i.time}] ${i.title} (${i.location}) - $${i.cost}`)
+      ].join('\n');
+
+      try {
+        const ta = document.createElement('textarea');
+        ta.value = lines;
+        document.body.appendChild(ta);
+        ta.select();
+        document.execCommand('copy');
+        ta.remove();
+        showToast('Itinerary summary copied to clipboard!');
+      } catch (err) {
+        showToast('Copied itinerary summary');
+      }
+    }
+
+    function handleAddExpense(e) {
+      e.preventDefault();
+      const trip = getActiveTrip();
+      const payload = {
+        title: document.getElementById('expTitle').value.trim(),
+        category: document.getElementById('expCategory').value,
+        amount: parseFloat(document.getElementById('expAmount').value) || 0,
+        date: document.getElementById('expDate').value
+      };
+      dispatchApiRequest('POST', `/api/trips/${trip.id}/expenses`, payload);
+      document.getElementById('expTitle').value = '';
+      renderAll();
+      showToast('Logged expense');
+    }
+
+    function deleteExpenseItem(expId) {
+      dispatchApiRequest('DELETE', `/api/expenses/${expId}`);
+      renderAll();
+      showToast('Expense removed');
+    }
+
+    function handleAddPacking(e) {
+      e.preventDefault();
+      const trip = getActiveTrip();
+      const payload = {
+        item: document.getElementById('packItemName').value.trim(),
+        category: document.getElementById('packCategory').value
+      };
+      dispatchApiRequest('POST', `/api/trips/${trip.id}/packing`, payload);
+      document.getElementById('packItemName').value = '';
+      renderAll();
+      showToast('Added item to packing list');
+    }
+
+    function togglePackingItem(packId, packed) {
+      dispatchApiRequest('PATCH', `/api/packing/${packId}`, { packed });
+      renderAll();
+    }
+
+    function deletePackingItem(packId) {
+      dispatchApiRequest('DELETE', `/api/packing/${packId}`);
+      renderAll();
+    }
+
+    function autoSuggestPacking() {
+      const trip = getActiveTrip();
+      const suggestions = [
+        { item: 'Compact Rain Umbrella / Poncho', category: 'Essentials' },
+        { item: 'Offline Maps & Translation Pack', category: 'Electronics' },
+        { item: 'First-Aid & Motion Sickness Kit', category: 'Toiletries' }
+      ];
+      suggestions.forEach(s => {
+        const exists = trip.packing.some(p => p.item.toLowerCase() === s.item.toLowerCase());
+        if (!exists) {
+          dispatchApiRequest('POST', `/api/trips/${trip.id}/packing`, s);
+        }
+      });
+      renderAll();
+      showToast('Added smart weather & travel essentials!');
+    }
+
+    function sendQuickPrompt(promptText) {
+      document.getElementById('assistantInput').value = promptText;
+      submitAssistantPrompt(promptText);
+    }
+
+    function handleAskAssistant(e) {
+      e.preventDefault();
+      const input = document.getElementById('assistantInput');
+      const promptText = input.value.trim();
+      if (!promptText) return;
+      submitAssistantPrompt(promptText);
+    }
+
+    function submitAssistantPrompt(promptText) {
+      const trip = getActiveTrip();
+      chatMessages.push({ role: 'user', text: promptText });
+      document.getElementById('assistantInput').value = '';
+
+      const res = dispatchApiRequest('POST', '/api/assistant/ask', {
+        prompt: promptText,
+        destination: trip.destination,
+        budget: trip.budget
+      });
+
+      chatMessages.push({
+        role: 'assistant',
+        text: res.reply,
+        suggested: res.suggested_activity || null
+      });
+      renderAssistantChat();
+    }
+
+    function addSuggestedActivity(msgIndex) {
+      const msg = chatMessages[msgIndex];
+      if (!msg || !msg.suggested) return;
+      const trip = getActiveTrip();
+      dispatchApiRequest('POST', `/api/trips/${trip.id}/itinerary`, msg.suggested);
+      renderAll();
+      showToast(`Added "${msg.suggested.title}" to Day ${msg.suggested.day}!`);
+    }
+
+    function triggerTestEndpoint(method, endpoint) {
+      const trip = getActiveTrip();
+      const payload = method === 'POST'
+        ? { prompt: 'Suggest a 3-day cultural highlight plan', destination: trip.destination, budget: trip.budget }
+        : null;
+      dispatchApiRequest(method, endpoint, payload);
+      showToast(`Executed ${method} ${endpoint}`);
+    }
+
+    function clearApiLogs() {
+      apiLogs = [];
+      renderApiLogs();
+      showToast('Cleared API log console');
+    }
+
+    function resetDemoDatabase() {
+      state = getSeedData();
+      saveDatabase();
+      chatMessages = [];
+      dispatchApiRequest('GET', '/api/trips');
+      renderAll();
+      renderAssistantChat();
+      showToast('Reset demo database to initial seed state');
+    }
+
+    // Initialize on load
+    window.addEventListener('DOMContentLoaded', () => {
+      loadDatabase();
+      dispatchApiRequest('GET', '/api/health');
+      dispatchApiRequest('GET', '/api/trips');
+      renderAll();
+      renderAssistantChat();
+    });
+  </script>
+</body>
+</html>
